@@ -1,4 +1,5 @@
-.idea/
+.idea
 database.config.php
-composer.*
+composer.phar
+composer.lock
 vendor/
