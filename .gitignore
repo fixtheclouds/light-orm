@@ -1,0 +1,4 @@
+.idea/
+database.config.php
+composer.*
+vendor/

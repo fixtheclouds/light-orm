@@ -1,0 +1,15 @@
+{
+  "name": "unsaidxpl/tiny-orm",
+  "description": "Dead simple ORM implementation in PHP",
+  "minimum-stability": "stable",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Egor Romanov",
+      "email": "unsaidxpl@gmail.com"
+    }
+  ],
+  "require-dev": {
+    "phpunit/phpunit": "5.7.20"
+  }
+}
