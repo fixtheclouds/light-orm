@@ -4,7 +4,7 @@
  * @package tynyorm
  * @author Egor Romanov <unsaidxpl@gmail.com>
  */
-abstract class TinyORM implements ModelInterface
+abstract class TinyORM
 {
 
     const DEFAULT_PRIMARY_KEY = 'id';
@@ -56,7 +56,7 @@ abstract class TinyORM implements ModelInterface
      */
     public function __get($attribute) {
         if (!$this->_destroy) {
-            return $this->attributes[$attribute];
+            return isset($this->attributes[$attribute]) ? $this->attributes[$attribute] : null;
         }
         throw new Exception("Cannot get data from destroyed record");
     }
@@ -85,8 +85,13 @@ abstract class TinyORM implements ModelInterface
      *
      * @param mysqli $connection MySQLi connection instance
      * @param string $dbName database name
+     * @throws Exception
      */
     public static function establishConnection($connection, $dbName) {
+        if (!$connection || !$dbName) {
+            throw new Exception("Connection is invalid");
+        }
+
         self::$connection = $connection;
         self::$dbName = $dbName;
 
@@ -168,13 +173,13 @@ abstract class TinyORM implements ModelInterface
     public function destroy()
     {
         if ($this->isPersisted()) {
-            $this->_destroy = true;
-
             $primaryKey = self::getPrimaryKey();
-            $query = sprintf("DELETE FROM `%s` WHERE `%s` = '%s'", self::getTableName(), $primaryKey, $this->{$primaryKey});
+            $query = sprintf("DELETE FROM `%s` WHERE `%s` = %s", self::getTableName(), $primaryKey, intval($this->{$primaryKey}));
 
+            $result = self::$connection->query($query);
             unset($this->{$primaryKey});
-            return self::$connection->query($query);
+            $this->_destroy = true;
+            return $result;
         } else {
             throw new Exception("Can`t delete a record that isn`t present in database");
         }
@@ -187,9 +192,7 @@ abstract class TinyORM implements ModelInterface
      * @return TinyORM
      */
     public function assignAttributes($attributes) {
-        foreach ($attributes as $key => $value) {
-            $this->attributes[$key] = $value;
-        }
+        $this->attributes = $attributes;
         return $this;
     }
 
@@ -243,13 +246,13 @@ abstract class TinyORM implements ModelInterface
     protected function insert() {
         $columns = [];
         $values = [];
-
         foreach ($this->attributes as $key => $value) {
             $columns[] = "`$key`";
             $values[] = "'" . self::$connection->real_escape_string($value) . "'";
         }
 
         $query = sprintf("INSERT INTO `%s` (%s) VALUES (%s)", self::getTableName(), implode(', ', $columns), implode(', ', $values));
+
         if (self::$connection->query($query)) {
             $this->id = self::$connection->insert_id;
             return $this;

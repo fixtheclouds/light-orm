@@ -6,7 +6,7 @@
  */
 $db = [
     'host' => 'localhost',
-    'port' => 8080,
+    'port' => '',
     'user' => 'root',
     'password' => '',
     'name' => 'database'
