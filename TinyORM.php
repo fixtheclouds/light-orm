@@ -81,6 +81,21 @@ abstract class TinyORM
         throw new Exception("Cannot set data of destroyed record");
     }
 
+    /**
+     * Magic method for creating static methods dynamically
+     *
+     * @param string $name
+     * @param array $arguments
+     * @return TinyORM
+     */
+    public static function __callStatic($name, $arguments)
+    {
+        if (strpos($name, 'findBy') === 0 && count($arguments) > 0) {
+            $key = strtolower(str_replace('findBy', '', $name));
+            return self::load($key, $arguments[0]);
+        }
+    }
+
     /**************************
      * Class methods
      **************************/
@@ -125,7 +140,7 @@ abstract class TinyORM
      * Create record and save it to database
      *
      * @param $attributes
-     * @return mixed
+     * @return TinyORM|boolean
      */
     public static function create($attributes) {
         $record = new static($attributes);
@@ -133,15 +148,24 @@ abstract class TinyORM
     }
 
     /**
-     * Find record by id and return model instance
+     * Find record by id
      * @param int $id
      * @throws Exception
      * @return TinyORM
      */
     public static function find($id) {
-        $sql = sprintf("SELECT * FROM `%s` WHERE `%s` = ?", self::getTableName(), self::getPrimaryKey());
+        return self::load(self::getPrimaryKey(), $id);
+    }
+
+    /**
+     * Retrieve first record found by certain column value
+     * @param $key
+     * @param $value
+     */
+    protected static function load($key, $value) {
+        $sql = sprintf("SELECT * FROM `%s` WHERE `%s` = ?", self::getTableName(), $key);
         $query = self::$connection->prepare($sql);
-        $query->execute([$id]);
+        $query->execute([$value]);
 
         $result = $query->fetch(PDO::FETCH_ASSOC);
         if (empty($result)) {
@@ -248,7 +272,7 @@ abstract class TinyORM
         foreach ($this->attributes as $key => $value) {
             $statements[] = sprintf("`%s` = %s", $key, self::$connection->quote($value));
         }
-        $sql = sprintf("UPDATE `%s` SET `%s` WHERE `%s` = `%s`", self::getTableName(),
+        $sql = sprintf("UPDATE `%s` SET %s WHERE `%s` = `%s`", self::getTableName(),
             implode(', ', $statements), $primaryKey, $this->{$primaryKey});
 
         try {
