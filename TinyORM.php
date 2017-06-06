@@ -10,14 +10,9 @@ abstract class TinyORM
     const DEFAULT_PRIMARY_KEY = 'id';
 
     /**
-     * @var mysqli
+     * @var PDO
      */
     protected static $connection;
-
-    /**
-     * @var string
-     */
-    protected static $dbName;
 
     /**
      * @var string table primary key
@@ -83,19 +78,15 @@ abstract class TinyORM
     /**
      * Establish database connection
      *
-     * @param mysqli $connection MySQLi connection instance
-     * @param string $dbName database name
+     * @param PDO $connection PDO connection instance
      * @throws Exception
      */
-    public static function establishConnection($connection, $dbName) {
-        if (!$connection || !$dbName) {
+    public static function establishConnection($connection) {
+        if (!$connection) {
             throw new Exception("Connection is invalid");
         }
 
         self::$connection = $connection;
-        self::$dbName = $dbName;
-
-        self::$connection->select_db($dbName);
     }
 
     /**
@@ -106,7 +97,7 @@ abstract class TinyORM
     public static function getTableName() {
         $className = get_called_class();
 
-        return isset($className::$table) ? $className::$table : self::$connection->real_escape_string(strtolower($className));
+        return isset($className::$table) ? $className::$table : strtolower($className);
     }
 
     /**
@@ -138,13 +129,15 @@ abstract class TinyORM
      * @return TinyORM
      */
     public static function find($id) {
-        $query = sprintf("SELECT * FROM `%s` WHERE `%s` = %s", self::getTableName(), self::getPrimaryKey(), intval($id));
-        $result = self::$connection->query($query);
+        $sql = sprintf("SELECT * FROM `%s` WHERE `%s` = ?", self::getTableName(), self::getPrimaryKey());
+        $query = self::$connection->prepare($sql);
+        $query->execute([$id]);
 
-        if (!$result->num_rows) {
+        $result = $query->fetch(PDO::FETCH_ASSOC);
+        if (empty($result)) {
             throw new Exception('Record not found in database.');
         }
-        return new static($result->fetch_assoc());
+        return new static($result);
     }
 
     /**************************
@@ -174,9 +167,10 @@ abstract class TinyORM
     {
         if ($this->isPersisted()) {
             $primaryKey = self::getPrimaryKey();
-            $query = sprintf("DELETE FROM `%s` WHERE `%s` = %s", self::getTableName(), $primaryKey, intval($this->{$primaryKey}));
+            $sql = sprintf("DELETE FROM `%s` WHERE `%s` = ?", self::getTableName(), $primaryKey);
+            $query = self::$connection->prepare($sql);
+            $result = $query->execute([$this->{$primaryKey}]);
 
-            $result = self::$connection->query($query);
             unset($this->{$primaryKey});
             $this->_destroy = true;
             return $result;
@@ -228,14 +222,17 @@ abstract class TinyORM
         $statements = [];
 
         foreach ($this->attributes as $key => $value) {
-            $statements[] = sprintf("`%s` = '%s'", $key, self::$connection->real_escape_string($value));
+            $statements[] = sprintf("`%s` = %s", $key, self::$connection->quote($value));
+        }
+        $sql = sprintf("UPDATE `%s` SET `%s` WHERE `%s` = `%s`", self::getTableName(),
+            implode(', ', $statements), $primaryKey, $this->{$primaryKey});
+        try {
+            self::$connection->query($sql);
+        } catch(Exception $e) {
+            return false;
         }
 
-        $query = sprintf("UPDATE `%s` SET `%s` WHERE `%s` = `%s`", self::getTableName(), implode(', ', $statements), $primaryKey, $this->{$primaryKey});
-        if (self::$connection->query($query)) {
-            return $this;
-        }
-        return false;
+        return $this;
     }
 
     /**
@@ -248,15 +245,18 @@ abstract class TinyORM
         $values = [];
         foreach ($this->attributes as $key => $value) {
             $columns[] = "`$key`";
-            $values[] = "'" . self::$connection->real_escape_string($value) . "'";
+            $values[] = self::$connection->quote($value);
         }
 
-        $query = sprintf("INSERT INTO `%s` (%s) VALUES (%s)", self::getTableName(), implode(', ', $columns), implode(', ', $values));
-
-        if (self::$connection->query($query)) {
-            $this->id = self::$connection->insert_id;
-            return $this;
+        $sql = sprintf("INSERT INTO `%s` (%s) VALUES (%s)", self::getTableName(),
+            implode(', ', $columns), implode(', ', $values));
+        try {
+            self::$connection->query($sql);
+        } catch (Exception $e) {
+            return false;
         }
-        return false;
+
+        $this->id = self::$connection->lastInsertId();
+        return $this;
     }
 }

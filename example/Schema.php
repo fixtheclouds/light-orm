@@ -28,7 +28,6 @@ class Schema
         if (!$this->connection->query("CREATE DATABASE IF NOT EXISTS $dbName")) {
             throw new Exception('Error occurred while creating database');
         }
-        $this->connection->select_db($dbName);
     }
 
     /**

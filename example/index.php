@@ -4,10 +4,8 @@ require 'Schema.php';
 require 'Users.php';
 
 // Establish connection
-$connection = new mysqli($db['host'], $db['user'], $db['password'], $db['name']);
-if ($connection->connect_error) {
-    throw new Exception("Database connection error");
-}
+$connection = new PDO("mysql:host={$db['host']};dbname={$db['name']}", $db['user'], $db['password']);
+$connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 // Initialize schema
 $schema = new Schema($connection);
@@ -19,7 +17,7 @@ try {
 }
 
 // Play around with model
-Users::establishConnection($connection, $db['name']);
+Users::establishConnection($connection, 'users');
 $user = Users::create([
     'name' => 'John Doe',
     'email' => 'johndoe@example.com',
