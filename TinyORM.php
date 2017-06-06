@@ -20,14 +20,24 @@ abstract class TinyORM
     protected static $primaryKey = self::DEFAULT_PRIMARY_KEY;
 
     /**
+     * @var array
+     */
+    protected $attributes = [];
+
+    /**
      * @var bool
      */
     protected $_destroy = false;
 
     /**
-     * @var array
+     * @var array validation errors
      */
-    protected $attributes = [];
+    protected $_errors = [];
+
+    /**
+     * @var array required fields
+     */
+    protected $_required = [];
 
     /**************************
      * Magic methods
@@ -150,6 +160,11 @@ abstract class TinyORM
      * @return mixed
      */
     public function save() {
+        $this->_errors = [];
+        if (!$this->isValid()) {
+            return false;
+        }
+
         if (!$this->isPersisted()) {
             return $this->insert();
         } else {
@@ -191,6 +206,15 @@ abstract class TinyORM
     }
 
     /**
+     * Errors getter
+     *
+     * @return array
+     */
+    public function errors() {
+        return $this->_errors;
+    }
+
+    /**
      * Detect whether record is persisted in database
      *
      * @return bool
@@ -226,6 +250,7 @@ abstract class TinyORM
         }
         $sql = sprintf("UPDATE `%s` SET `%s` WHERE `%s` = `%s`", self::getTableName(),
             implode(', ', $statements), $primaryKey, $this->{$primaryKey});
+
         try {
             self::$connection->query($sql);
         } catch(Exception $e) {
@@ -250,6 +275,7 @@ abstract class TinyORM
 
         $sql = sprintf("INSERT INTO `%s` (%s) VALUES (%s)", self::getTableName(),
             implode(', ', $columns), implode(', ', $values));
+
         try {
             self::$connection->query($sql);
         } catch (Exception $e) {
@@ -258,5 +284,29 @@ abstract class TinyORM
 
         $this->id = self::$connection->lastInsertId();
         return $this;
+    }
+
+    /**
+     * Validate required column presence
+     *
+     * @param string $key
+     * @param mixed $value
+     */
+    protected function validatePresence($key, $value) {
+        if (in_array($key, $this->_required) && empty($value)) {
+            $this->_errors[] = "$key should not be blank";
+        }
+    }
+
+    /**
+     * Returns true if record passes validations
+     *
+     * @return bool
+     */
+    protected function isValid() {
+        foreach ($this->attributes as $key => $value) {
+            $this->validatePresence($key, $value);
+        }
+        return empty($this->_errors);
     }
 }

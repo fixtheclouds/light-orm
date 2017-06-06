@@ -17,7 +17,7 @@ try {
 }
 
 // Play around with model
-Users::establishConnection($connection, 'users');
+Users::establishConnection($connection);
 $user = Users::create([
     'name' => 'John Doe',
     'email' => 'johndoe@example.com',
