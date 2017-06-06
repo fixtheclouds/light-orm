@@ -2,6 +2,7 @@
 
 /**
  * Schema loader for example
+ * @package lightorm
  */
 class Schema
 {

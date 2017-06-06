@@ -1,4 +1,4 @@
-# tiny-orm
+# light-orm
 
 Dead simple ORM implementation created to play around with PHP metaprogramming abilities.
 

@@ -2,7 +2,7 @@
 /**
  * Sample database configuration file
  *
- * @package tinyorm
+ * @package lightorm
  */
 $db = [
     'host' => 'localhost',

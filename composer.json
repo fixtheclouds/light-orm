@@ -1,5 +1,5 @@
 {
-  "name": "unsaidxpl/tiny-orm",
+  "name": "unsaidxpl/light-orm",
   "description": "Dead simple ORM implementation in PHP",
   "minimum-stability": "stable",
   "license": "WTFPL",

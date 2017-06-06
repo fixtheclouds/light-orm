@@ -1,8 +1,8 @@
 <?php
 
-require '../TinyORM.php';
+require '../LightORM.php';
 
-class Users extends TinyORM
+class Users extends LightORM
 {
 
 }

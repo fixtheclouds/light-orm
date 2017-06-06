@@ -1,10 +1,10 @@
 <?php
 
 /**
- * @package tynyorm
+ * @package lightorm
  * @author Egor Romanov <unsaidxpl@gmail.com>
  */
-abstract class TinyORM
+abstract class LightORM
 {
 
     const DEFAULT_PRIMARY_KEY = 'id';
@@ -86,7 +86,7 @@ abstract class TinyORM
      *
      * @param string $name
      * @param array $arguments
-     * @return TinyORM
+     * @return LightORM
      */
     public static function __callStatic($name, $arguments)
     {
@@ -140,7 +140,7 @@ abstract class TinyORM
      * Create record and save it to database
      *
      * @param $attributes
-     * @return TinyORM|boolean
+     * @return LightORM|boolean
      */
     public static function create($attributes) {
         $record = new static($attributes);
@@ -151,7 +151,7 @@ abstract class TinyORM
      * Find record by id
      * @param int $id
      * @throws Exception
-     * @return TinyORM
+     * @return LightORM
      */
     public static function find($id) {
         return self::load(self::getPrimaryKey(), $id);
@@ -222,7 +222,7 @@ abstract class TinyORM
      * Assign attributes from array to model instance
      *
      * @param array $attributes
-     * @return TinyORM
+     * @return LightORM
      */
     public function assignAttributes($attributes) {
         $this->attributes = $attributes;
@@ -260,7 +260,7 @@ abstract class TinyORM
      * Update existing record in database
      *
      * @throws Exception
-     * @return TinyORM | boolean
+     * @return LightORM | boolean
      */
     protected function update() {
         if ($this->_destroy) {
@@ -287,7 +287,7 @@ abstract class TinyORM
     /**
      * Insert new record into database
      *
-     * @return TinyORM | boolean
+     * @return LightORM | boolean
      */
     protected function insert() {
         $columns = [];
