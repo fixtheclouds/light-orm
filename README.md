@@ -4,7 +4,6 @@ Dead simple ORM implementation created to play around with PHP metaprogramming a
 
 ## TODO
 
-- Cover with tests
 - Develop simple query interface (`where, limit, order etc.`)
 - Split to namespaced subclasses
 - PHP 7

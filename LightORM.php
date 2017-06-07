@@ -20,6 +20,11 @@ abstract class LightORM
     protected static $primaryKey = self::DEFAULT_PRIMARY_KEY;
 
     /**
+     * @var array required fields
+     */
+    protected static $_required = [];
+
+    /**
      * @var array
      */
     protected $attributes = [];
@@ -33,11 +38,6 @@ abstract class LightORM
      * @var array validation errors
      */
     protected $_errors = [];
-
-    /**
-     * @var array required fields
-     */
-    protected $_required = [];
 
     /**************************
      * Magic methods
@@ -92,7 +92,7 @@ abstract class LightORM
     {
         if (strpos($name, 'findBy') === 0 && count($arguments) > 0) {
             $key = strtolower(str_replace('findBy', '', $name));
-            return self::load($key, $arguments[0]);
+            return static::load($key, $arguments[0]);
         }
     }
 
@@ -111,7 +111,7 @@ abstract class LightORM
             throw new Exception("Connection is invalid");
         }
 
-        self::$connection = $connection;
+        static::$connection = $connection;
     }
 
     /**
@@ -144,7 +144,12 @@ abstract class LightORM
      */
     public static function create($attributes) {
         $record = new static($attributes);
-        return $record->save();
+        if (!$record->save()) {
+            $message = empty($record->_errors) ? "Failed to create user" :
+                "Validation failed: " . implode('; ', $record->_errors);
+            throw new Exception($message);
+        }
+        return $record;
     }
 
     /**
@@ -154,17 +159,19 @@ abstract class LightORM
      * @return LightORM
      */
     public static function find($id) {
-        return self::load(self::getPrimaryKey(), $id);
+        return static::load(static::getPrimaryKey(), $id);
     }
 
     /**
      * Retrieve first record found by certain column value
      * @param $key
      * @param $value
+     * @throws Exception
+     * @return LightORM
      */
     protected static function load($key, $value) {
-        $sql = sprintf("SELECT * FROM `%s` WHERE `%s` = ?", self::getTableName(), $key);
-        $query = self::$connection->prepare($sql);
+        $sql = sprintf("SELECT * FROM `%s` WHERE `%s` = ?", static::getTableName(), $key);
+        $query = static::$connection->prepare($sql);
         $query->execute([$value]);
 
         $result = $query->fetch(PDO::FETCH_ASSOC);
@@ -205,9 +212,9 @@ abstract class LightORM
     public function destroy()
     {
         if ($this->isPersisted()) {
-            $primaryKey = self::getPrimaryKey();
-            $sql = sprintf("DELETE FROM `%s` WHERE `%s` = ?", self::getTableName(), $primaryKey);
-            $query = self::$connection->prepare($sql);
+            $primaryKey = static::getPrimaryKey();
+            $sql = sprintf("DELETE FROM `%s` WHERE `%s` = ?", static::getTableName(), $primaryKey);
+            $query = static::$connection->prepare($sql);
             $result = $query->execute([$this->{$primaryKey}]);
 
             unset($this->{$primaryKey});
@@ -239,17 +246,26 @@ abstract class LightORM
     }
 
     /**
+     * Fetch record from DB
+     */
+    public function reload() {
+        $record = static::find($this->id);
+        $this->assignAttributes($record->attributes);
+        return $record;
+    }
+
+    /**
      * Detect whether record is persisted in database
      *
      * @return bool
      */
     protected function isPersisted() {
-        $primaryKey = self::getPrimaryKey();
+        $primaryKey = static::getPrimaryKey();
         if (!$this->{$primaryKey}) {
             return false;
         }
         try {
-            self::find($this->{$primaryKey});
+            static::find($this->{$primaryKey});
         } catch (Exception $e) {
             return false;
         }
@@ -266,22 +282,22 @@ abstract class LightORM
         if ($this->_destroy) {
             throw new Exception('Cannot update destroyed record');
         }
-        $primaryKey = self::getPrimaryKey();
+        $primaryKey = static::getPrimaryKey();
         $statements = [];
 
         foreach ($this->attributes as $key => $value) {
-            $statements[] = sprintf("`%s` = %s", $key, self::$connection->quote($value));
+            $statements[] = sprintf("`%s` = %s", $key, static::$connection->quote($value));
         }
-        $sql = sprintf("UPDATE `%s` SET %s WHERE `%s` = `%s`", self::getTableName(),
+        $sql = sprintf("UPDATE `%s` SET %s WHERE `%s` = `%s`", static::getTableName(),
             implode(', ', $statements), $primaryKey, $this->{$primaryKey});
 
         try {
-            self::$connection->query($sql);
+            static::$connection->query($sql);
         } catch(Exception $e) {
             return false;
         }
 
-        return $this;
+        return true;
     }
 
     /**
@@ -294,20 +310,20 @@ abstract class LightORM
         $values = [];
         foreach ($this->attributes as $key => $value) {
             $columns[] = "`$key`";
-            $values[] = self::$connection->quote($value);
+            $values[] = static::$connection->quote($value);
         }
 
-        $sql = sprintf("INSERT INTO `%s` (%s) VALUES (%s)", self::getTableName(),
+        $sql = sprintf("INSERT INTO `%s` (%s) VALUES (%s)", static::getTableName(),
             implode(', ', $columns), implode(', ', $values));
 
         try {
-            self::$connection->query($sql);
+            static::$connection->query($sql);
         } catch (Exception $e) {
             return false;
         }
 
-        $this->id = self::$connection->lastInsertId();
-        return $this;
+        $this->id = static::$connection->lastInsertId();
+        return true;
     }
 
     /**
@@ -317,7 +333,7 @@ abstract class LightORM
      * @param mixed $value
      */
     protected function validatePresence($key, $value) {
-        if (in_array($key, $this->_required) && empty($value)) {
+        if (in_array($key, static::$_required) && empty($value)) {
             $this->_errors[] = "$key should not be blank";
         }
     }
@@ -328,6 +344,11 @@ abstract class LightORM
      * @return bool
      */
     protected function isValid() {
+        foreach (static::$_required as $required) {
+            if (!isset($this->attributes[$required])) {
+                $this->attributes[$required] = null;
+            }
+        }
         foreach ($this->attributes as $key => $value) {
             $this->validatePresence($key, $value);
         }

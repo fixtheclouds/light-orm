@@ -1,5 +1,5 @@
 .idea
-database.config.php
+test/database.config.php
 composer.phar
 composer.lock
 vendor/
