@@ -43,8 +43,32 @@ class BooksTest extends TestCase
         $this->assertEquals(Books::getPrimaryKey(), 'isbn');
     }
 
+    public function testCreateBook() {
+        $this->assertInstanceOf('Books', $this->book);
+    }
+
     public function testFindByNonstandardPK() {
         $found = Books::find($this->book->isbn);
         $this->assertEquals($this->book->reload(), $found);
+    }
+
+    public function testUpdateSQLinjection() {
+        $this->book->name = "1'; TRUNCATE TABLE entries;";
+        $result = $this->book->save();
+        $book = Books::find($this->book->isbn);
+        $this->assertTrue($result);
+        // table wasn't truncated?
+        $this->assertInstanceOf('Books', $book);
+    }
+
+    /**
+     * @expectedException Exception
+     */
+    public function testFindSQLinjection() {
+        $id = "test; TRUNCATE TABLE entries;";
+        Books::find($id);
+        $this->expectException(Exception::class);
+        // table wasn't truncated?
+        $this->assertTrue($this->book->save());
     }
 }
