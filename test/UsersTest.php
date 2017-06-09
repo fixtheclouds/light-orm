@@ -2,10 +2,10 @@
 
 use PHPUnit\Framework\TestCase;
 
-include_once(dirname(__FILE__).'/../LightORM.php');
+include_once(dirname(__FILE__) . '/../Base.php');
 include_once('DatabaseLoader.php');
 
-class Users extends LightORM {
+class Users extends LightORM\Base {
     protected static $_required = ['name'];
 }
 

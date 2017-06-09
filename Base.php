@@ -1,10 +1,12 @@
 <?php
-
 /**
  * @package lightorm
  * @author Egor Romanov <unsaidxpl@gmail.com>
  */
-abstract class LightORM
+
+namespace LightORM;
+
+abstract class Base
 {
 
     const DEFAULT_PRIMARY_KEY = 'id';
@@ -64,7 +66,7 @@ abstract class LightORM
         if (!$this->_destroy) {
             return isset($this->attributes[$attribute]) ? $this->attributes[$attribute] : null;
         }
-        throw new Exception("Cannot get data from destroyed record");
+        throw new \Exception("Cannot get data from destroyed record");
     }
 
     /**
@@ -79,7 +81,7 @@ abstract class LightORM
         if (!$this->_destroy) {
             return $this->attributes[$attribute] = $value;
         }
-        throw new Exception("Cannot set data of destroyed record");
+        throw new \Exception("Cannot set data of destroyed record");
     }
 
     /**
@@ -109,7 +111,7 @@ abstract class LightORM
      */
     public static function establishConnection($connection) {
         if (!$connection) {
-            throw new Exception("Connection is invalid");
+            throw new \Exception("Connection is invalid");
         }
 
         static::$connection = $connection;
@@ -149,7 +151,7 @@ abstract class LightORM
         if (!$record->save()) {
             $message = empty($record->_errors) ? "Failed to create user" :
                 "Validation failed: " . implode('; ', $record->_errors);
-            throw new Exception($message);
+            throw new \Exception($message);
         }
         return $record;
     }
@@ -164,6 +166,14 @@ abstract class LightORM
     }
 
     /**
+     * Create query interface
+     * @return QueryBuilder
+     */
+    public static function query() {
+        return new QueryBuilder(static::$connection, static::getTableName());
+    }
+
+    /**
      * Retrieve first record found by certain column value
      * @param $key
      * @param $value
@@ -175,9 +185,9 @@ abstract class LightORM
         $query = static::$connection->prepare($sql);
         $query->execute([$value]);
 
-        $result = $query->fetch(PDO::FETCH_ASSOC);
+        $result = $query->fetch(\PDO::FETCH_ASSOC);
         if (empty($result)) {
-            throw new Exception('Record not found in database.');
+            throw new \Exception('Record not found in database.');
         }
         return new static($result);
     }
@@ -222,7 +232,7 @@ abstract class LightORM
             $this->_destroy = true;
             return $result;
         } else {
-            throw new Exception("Can`t delete a record that isn`t present in database");
+            throw new \Exception("Can`t delete a record that isn`t present in database");
         }
     }
 
@@ -267,7 +277,7 @@ abstract class LightORM
         }
         try {
             static::find($this->{$primaryKey});
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return false;
         }
         return true;
@@ -281,7 +291,7 @@ abstract class LightORM
      */
     protected function update() {
         if ($this->_destroy) {
-            throw new Exception('Cannot update destroyed record');
+            throw new \Exception('Cannot update destroyed record');
         }
         $primaryKey = static::getPrimaryKey();
         $statements = [];
@@ -294,7 +304,7 @@ abstract class LightORM
 
         try {
             static::$connection->query($sql);
-        } catch(Exception $e) {
+        } catch(\Exception $e) {
             return false;
         }
 
@@ -319,7 +329,7 @@ abstract class LightORM
 
         try {
             static::$connection->query($sql);
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return false;
         }
 

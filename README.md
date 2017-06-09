@@ -41,6 +41,7 @@ Books::findByName('1984'); // => object(Books) ...
 
 // destroy records
 $book->destroy();
+$book->id; // => null
 $book->save(); // throws exception
 ```
 
