@@ -47,6 +47,7 @@ abstract class LightORM
      * Model constructor
      *
      * @param array $attributes array of attributes
+     * @return LightORM
      */
     public function __construct($attributes) {
         return $this->assignAttributes($attributes);
@@ -56,8 +57,8 @@ abstract class LightORM
      * Model attribute getter
      *
      * @param $attribute
-     * @return mixed
      * @throws Exception
+     * @return mixed
      */
     public function __get($attribute) {
         if (!$this->_destroy) {
@@ -140,7 +141,8 @@ abstract class LightORM
      * Create record and save it to database
      *
      * @param $attributes
-     * @return LightORM|boolean
+     * @throws Exception
+     * @return LightORM
      */
     public static function create($attributes) {
         $record = new static($attributes);
@@ -155,7 +157,6 @@ abstract class LightORM
     /**
      * Find record by id
      * @param int $id
-     * @throws Exception
      * @return LightORM
      */
     public static function find($id) {
@@ -188,7 +189,7 @@ abstract class LightORM
     /**
      * Save record to database
      *
-     * @return mixed
+     * @return boolean
      */
     public function save() {
         $this->_errors = [];
@@ -249,7 +250,7 @@ abstract class LightORM
      * Fetch record from DB
      */
     public function reload() {
-        $record = static::find($this->id);
+        $record = static::find($this->{self::getPrimaryKey()});
         $this->assignAttributes($record->attributes);
         return $record;
     }
@@ -288,7 +289,7 @@ abstract class LightORM
         foreach ($this->attributes as $key => $value) {
             $statements[] = sprintf("`%s` = %s", $key, static::$connection->quote($value));
         }
-        $sql = sprintf("UPDATE `%s` SET %s WHERE `%s` = `%s`", static::getTableName(),
+        $sql = sprintf("UPDATE `%s` SET %s WHERE `%s` = %s", static::getTableName(),
             implode(', ', $statements), $primaryKey, $this->{$primaryKey});
 
         try {
@@ -322,7 +323,7 @@ abstract class LightORM
             return false;
         }
 
-        $this->id = static::$connection->lastInsertId();
+        $this->{self::getPrimaryKey()} = static::$connection->lastInsertId();
         return true;
     }
 

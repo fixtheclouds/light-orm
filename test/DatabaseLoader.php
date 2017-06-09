@@ -3,7 +3,7 @@
 /**
  * Database loader
  */
-class DatabaseTest
+class DatabaseLoader
 {
 
     public static $connection;
@@ -15,20 +15,14 @@ class DatabaseTest
         self::$connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         // Create test db
         self::$connection->query("CREATE DATABASE IF NOT EXISTS {$db['name']}");
+    }
 
-        // Create test table
-        $query = 'CREATE TABLE IF NOT EXISTS users (
-            id INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            name VARCHAR(255),
-            email VARCHAR(255),
-            birthdate DATETIME,
-            sex CHAR(1)
-        )';
+    public static function query($query) {
+        // Run query
         self::$connection->query($query);
     }
 
-    public static function clear() {
-        self::$connection->query("TRUNCATE TABLE users");
-
+    public static function clear($tableName) {
+        self::$connection->query("TRUNCATE TABLE `$tableName`");
     }
 }

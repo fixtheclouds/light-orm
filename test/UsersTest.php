@@ -2,19 +2,15 @@
 
 use PHPUnit\Framework\TestCase;
 
-include(dirname(__FILE__).'/../LightORM.php');
-include('DatabaseTest.php');
+include_once(dirname(__FILE__).'/../LightORM.php');
+include_once('DatabaseLoader.php');
 
 class Users extends LightORM {
     protected static $_required = ['name'];
 }
 
-class LightORMTest extends TestCase
+class UsersTest extends TestCase
 {
-    protected static $connection;
-
-    protected static $schemaLoader;
-
     protected $userAttrs = [
         'name' => 'Pablo',
         'email' => 'pablo@mail.net',
@@ -23,13 +19,20 @@ class LightORMTest extends TestCase
     ];
 
     public static function setUpBeforeClass() {
-        DatabaseTest::setUp();
-        Users::establishConnection(DatabaseTest::$connection);
+        DatabaseLoader::setUp();
+        DatabaseLoader::query('CREATE TABLE IF NOT EXISTS users (
+            id INT(11) UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            name VARCHAR(255),
+            email VARCHAR(255),
+            birthdate DATETIME,
+            sex CHAR(1)
+        )');
+        Users::establishConnection(DatabaseLoader::$connection);
     }
 
     public static function tearDownAfterClass()
     {
-        DatabaseTest::clear();
+        DatabaseLoader::clear(Users::getTableName());
     }
 
     public function setUp() {
@@ -80,8 +83,9 @@ class LightORMTest extends TestCase
     public function testAttributeSetter() {
         $name = 'Alan';
         $this->user->name = $name;
-        $this->user->save();
-        $this->assertEquals($this->user->name, $name);
+        $result = $this->user->save();
+        $this->assertTrue($result);
+        $this->assertEquals($this->user->reload()->name, $name);
     }
 
     public function testAttributeGetter() {
@@ -93,6 +97,7 @@ class LightORMTest extends TestCase
         $this->user->name = $name;
         $this->user->reload();
         $this->assertNotEquals($this->user->name, $name);
+        $this->assertEquals($this->user->name, $this->userAttrs['name']);
     }
 
     /**
