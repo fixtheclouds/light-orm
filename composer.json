@@ -1,8 +1,7 @@
 {
   "name": "unsaidxpl/light-orm",
-  "description": "Dead simple ORM implementation in PHP",
-  "minimum-stability": "stable",
-  "license": "WTFPL",
+  "description": "Dead simple PHP ORM implementation",
+  "license": "Unlicense",
   "authors": [
     {
       "name": "Egor Romanov",

@@ -2,7 +2,7 @@
 
 Dead simple ORM implementation created to play around with PHP metaprogramming abilities. Supports basic CRUD operations with database records. 
 
-Supported databases: depends on installed PDO drivers (http://php.net/manual/en/pdo.drivers.php)
+Supports MySQL.
 
 ## Requirements
 
@@ -79,8 +79,3 @@ composer install
 ```
 phpunit test/
 ```
-
-## TODO
- 
- - Implement simple query methods
-
