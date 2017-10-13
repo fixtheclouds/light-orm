@@ -63,7 +63,7 @@ class Books extends LightORM {
 
 $book = new Book('author' => 'Someone');
 $book->save(); // => false
-$book->errors(); // = array([0] => 'Name can`t be blank');
+$book->errors(); // = array([0] => 'Name should not be blank');
 ```
 
 ## Running tests

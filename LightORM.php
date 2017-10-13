@@ -147,7 +147,7 @@ abstract class LightORM
     public static function create($attributes) {
         $record = new static($attributes);
         if (!$record->save()) {
-            $message = empty($record->_errors) ? "Failed to create user" :
+            $message = empty($record->_errors) ? "Failed to create record" :
                 "Validation failed: " . implode('; ', $record->_errors);
             throw new Exception($message);
         }
@@ -199,9 +199,8 @@ abstract class LightORM
 
         if (!$this->isPersisted()) {
             return $this->insert();
-        } else {
-            return $this->update();
         }
+        return $this->update();
     }
 
     /**
@@ -221,9 +220,8 @@ abstract class LightORM
             unset($this->{$primaryKey});
             $this->_destroy = true;
             return $result;
-        } else {
-            throw new Exception("Can`t delete a record that isn`t present in database");
         }
+        throw new Exception("Can`t delete a record that isn`t present in database");
     }
 
     /**
